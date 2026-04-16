@@ -1,0 +1,31 @@
+[package]
+name = "recompress-parquet"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+description = "CLI tool to recompress Apache Parquet files with a different compression codec"
+repository = "https://github.com/avbel/recompress-parquet"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+glob = "0.3"
+parquet = { version = "55", default-features = false, features = [
+    "arrow",
+    "snap",
+    "brotli",
+    "flate2",
+    "lz4",
+    "zstd",
+] }
+
+[dev-dependencies]
+tempfile = "3"
+arrow-array = { version = "55", default-features = false }
+arrow-schema = { version = "55", default-features = false }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
