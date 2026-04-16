@@ -4,7 +4,7 @@ use std::path::Path;
 use parquet::arrow::ArrowWriter;
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use parquet::basic::{BrotliLevel, Compression, GzipLevel, ZstdLevel};
-use parquet::file::properties::{EnabledStatistics, WriterProperties};
+use parquet::file::properties::WriterProperties;
 
 #[derive(Clone, Debug, clap::ValueEnum)]
 pub enum Codec {
@@ -104,7 +104,6 @@ pub fn recompress(
 
     let mut props_builder = WriterProperties::builder()
         .set_compression(compression)
-        .set_statistics_enabled(EnabledStatistics::Page)
         .set_created_by(format!(
             "recompress-parquet v{}",
             env!("CARGO_PKG_VERSION")
