@@ -56,7 +56,7 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
                 .file_name()
                 .ok_or_else(|| format!("cannot determine file name for {}", path.display()))?;
             let out_path = cli.output.join(file_name);
-            eprintln!(
+            println!(
                 "Recompressing {} -> {}",
                 path.display(),
                 out_path.display()
@@ -71,7 +71,7 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
                 std::fs::create_dir_all(parent)?;
             }
         }
-        eprintln!(
+        println!(
             "Recompressing {} -> {}",
             path.display(),
             cli.output.display()
@@ -79,7 +79,7 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         recompress(path, &cli.output, compression)?;
     }
 
-    eprintln!("Done ({} file(s) processed)", paths.len());
+    println!("Done ({} file(s) processed)", paths.len());
     Ok(())
 }
 
