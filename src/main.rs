@@ -23,8 +23,7 @@ struct Cli {
 }
 
 fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
-    let compression = parse_compression(&cli.compression, cli.level)
-        .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+    let compression = parse_compression(&cli.compression, cli.level)?;
 
     let paths: Vec<PathBuf> = glob::glob(&cli.input)
         .map_err(|e| format!("invalid glob pattern: {e}"))?

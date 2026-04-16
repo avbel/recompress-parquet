@@ -116,12 +116,14 @@ pub fn recompress(
 
     let props = props_builder.build();
 
-    let mut writer = ArrowWriter::try_new(output_file, schema.clone(), Some(props))?;
+    // Re-open once and clone the file descriptor per row group (cheaper than re-opening by path).
+    let input_file = File::open(input)?;
+    let mut writer = ArrowWriter::try_new(output_file, schema, Some(props))?;
 
     // Process each row group separately to preserve row group boundaries.
     for rg_idx in 0..num_row_groups {
-        let input_file = File::open(input)?;
-        let rg_builder = ParquetRecordBatchReaderBuilder::try_new(input_file)?
+        let rg_file = input_file.try_clone()?;
+        let rg_builder = ParquetRecordBatchReaderBuilder::try_new(rg_file)?
             .with_row_groups(vec![rg_idx]);
         let rg_reader = rg_builder.build()?;
 
