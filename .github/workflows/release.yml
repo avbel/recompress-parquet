@@ -87,3 +87,66 @@ jobs:
             artifacts/recompress-parquet-macos-arm64/recompress-parquet-macos-arm64.zip
             artifacts/recompress-parquet-windows-x64/recompress-parquet-windows-x64.zip
           generate_release_notes: true
+
+  homebrew:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Compute checksums and generate formula
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA_LINUX=$(sha256sum artifacts/recompress-parquet-linux-x64/recompress-parquet-linux-x64.tar.gz | awk '{print $1}')
+          SHA_MACOS=$(sha256sum artifacts/recompress-parquet-macos-arm64/recompress-parquet-macos-arm64.zip | awk '{print $1}')
+
+          cat > recompress-parquet.rb <<FORMULA
+          class RecompressParquet < Formula
+            desc "CLI tool to recompress Apache Parquet files with a different compression codec"
+            homepage "https://github.com/avbel/recompress-parquet"
+            version "${VERSION}"
+            license "MIT"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/avbel/recompress-parquet/releases/download/v#{version}/recompress-parquet-macos-arm64.zip"
+                sha256 "${SHA_MACOS}"
+              end
+            end
+
+            on_linux do
+              if Hardware::CPU.intel?
+                url "https://github.com/avbel/recompress-parquet/releases/download/v#{version}/recompress-parquet-linux-x64.tar.gz"
+                sha256 "${SHA_LINUX}"
+              end
+            end
+
+            def install
+              bin.install "recompress-parquet"
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/recompress-parquet --version")
+            end
+          end
+          FORMULA
+
+          # Remove leading whitespace from heredoc
+          sed -i 's/^          //' recompress-parquet.rb
+
+      - name: Push formula to Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/avbel/homebrew-tap.git" tap
+          mkdir -p tap/Formula
+          cp recompress-parquet.rb tap/Formula/recompress-parquet.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/recompress-parquet.rb
+          git commit -m "Update recompress-parquet to ${GITHUB_REF_NAME#v}"
+          git push

@@ -8,6 +8,12 @@ A fast CLI tool to recompress [Apache Parquet](https://parquet.apache.org/) file
 
 ## Installation
 
+### Homebrew (macOS / Linux)
+
+```sh
+brew install avbel/tap/recompress-parquet
+```
+
 ### From GitHub Releases
 
 Download the latest binary for your platform from the [Releases page](https://github.com/avbel/recompress-parquet/releases).
