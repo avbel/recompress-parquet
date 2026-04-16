@@ -1,7 +1,8 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::Parser;
+use parquet::basic::Compression;
 use recompress_parquet::{Codec, parse_compression, recompress};
 
 #[derive(Parser)]
@@ -56,12 +57,7 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
                 .file_name()
                 .ok_or_else(|| format!("cannot determine file name for {}", path.display()))?;
             let out_path = cli.output.join(file_name);
-            println!(
-                "Recompressing {} -> {}",
-                path.display(),
-                out_path.display()
-            );
-            recompress(path, &out_path, compression)?;
+            recompress_and_report(path, &out_path, compression)?;
         }
     } else {
         // Single file, output is a file path
@@ -71,15 +67,26 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
                 std::fs::create_dir_all(parent)?;
             }
         }
-        println!(
-            "Recompressing {} -> {}",
-            path.display(),
-            cli.output.display()
-        );
-        recompress(path, &cli.output, compression)?;
+        recompress_and_report(path, &cli.output, compression)?;
     }
 
     println!("Done ({} file(s) processed)", paths.len());
+    Ok(())
+}
+
+fn recompress_and_report(
+    input: &Path,
+    output: &Path,
+    compression: Compression,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let input_size = std::fs::metadata(input)?.len();
+    println!("Recompressing {} -> {}", input.display(), output.display());
+    recompress(input, output, compression)?;
+    let output_size = std::fs::metadata(output)?.len();
+    if input_size > 0 {
+        let ratio = output_size as f64 / input_size as f64 * 100.0;
+        println!("  {input_size} -> {output_size} bytes ({ratio:.0}% of original)");
+    }
     Ok(())
 }
 
