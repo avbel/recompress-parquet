@@ -91,6 +91,8 @@ jobs:
   homebrew:
     needs: release
     runs-on: ubuntu-latest
+    env:
+      TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -137,9 +139,12 @@ jobs:
           # Remove leading whitespace from heredoc
           sed -i 's/^          //' recompress-parquet.rb
 
+      - name: Skip Homebrew tap update when token is unavailable
+        if: env.TAP_TOKEN == ''
+        run: echo "HOMEBREW_TAP_TOKEN is not configured; skipping Homebrew tap update."
+
       - name: Push formula to Homebrew tap
-        env:
-          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        if: env.TAP_TOKEN != ''
         run: |
           git clone "https://x-access-token:${TAP_TOKEN}@github.com/avbel/homebrew-tap.git" tap
           mkdir -p tap/Formula
